@@ -23,9 +23,15 @@
 # SOFTWARE.
 
 from extract import extract_assets
+from create_mod import create_mod
 
 def main():
-    extract_assets("/tmp/test/Heroes of Might & Magic III - HD Edition", "/tmp/test/tmp")
+    input_path = "/tmp/test/Heroes of Might & Magic III - HD Edition"
+    temp_path = "/tmp/test/tmp"
+    output_path = "/tmp/test/out"
+
+    #extract_assets(input_path, temp_path)
+    create_mod(temp_path, output_path)
 
 if __name__ == '__main__':
     main()
