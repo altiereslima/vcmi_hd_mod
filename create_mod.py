@@ -27,11 +27,12 @@ import json
 import zipfile
 
 def create_mod(in_folder, out_folder):
+    out_folder = os.path.join(out_folder, "hd_version")
+    os.makedirs(out_folder, exist_ok=True)
+
     for scale in ["2", "3"]:
         lang = os.listdir(os.path.join(in_folder, "bitmap_DXT_loc_x" + scale + ".pak"))[0]
 
-        out_folder = os.path.join(out_folder, "hd_version")
-        os.makedirs(out_folder, exist_ok=True)
         out_folder_main = os.path.join(out_folder, "mods", "x" + scale)
         os.makedirs(out_folder_main, exist_ok=True)
         out_folder_translation = os.path.join(out_folder, "mods", "x" + scale + "_translation_" + lang.lower())
@@ -55,8 +56,8 @@ def create_mod(in_folder, out_folder):
                 path = os.path.join(in_folder, name, lang if "loc" in name else "")
                 for folder in os.listdir(path):
                     for file in os.listdir(os.path.join(path, folder)):
-                        archive.writestr("sprites/x" + scale + "_" + folder + "/" + file, open(os.path.join(path, folder, file), "rb").read())
-                    archive.writestr("sprites/" + folder + "$" + scale + ".json", create_animation_config("x" + scale + "_" + folder, os.listdir(os.path.join(path, folder))))
+                        archive.writestr("sprites/" + folder + "$" + scale + "/" + file, open(os.path.join(path, folder, file), "rb").read())
+                    archive.writestr("sprites/" + folder + "$" + scale + ".json", create_animation_config(folder + "$" + scale, os.listdir(os.path.join(path, folder))))
 
 
 def create_mod_config():
