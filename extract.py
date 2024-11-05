@@ -32,15 +32,16 @@ def extract_assets(in_folder, out_folder, save_dds=False):
     data_dir = os.path.join(in_folder, "data")
     shutil.copytree(data_dir, os.path.join(out_folder, "data"), dirs_exist_ok=True)
 
-    for filename in os.listdir(data_dir):
-        if filename.lower().endswith(".pak") and "x3" in filename:
-            full_name = os.path.join(data_dir, filename)
-            __extract_pak(full_name, "", out_folder, save_dds)
-    for filename in os.listdir(os.path.join(data_dir, 'LOC', list(os.listdir(os.path.join(data_dir, 'LOC')))[0])):
-        if filename.lower().endswith(".pak") and "x3" in filename:
-            lang = list(os.listdir(os.path.join(data_dir, 'LOC')))[0]
-            full_name = os.path.join(data_dir, 'LOC', lang, filename)
-            __extract_pak(full_name, lang, out_folder, save_dds)
+    for scale in ["2", "3"]:
+        for filename in os.listdir(data_dir):
+            if filename.lower().endswith(".pak") and "x" + scale in filename:
+                full_name = os.path.join(data_dir, filename)
+                __extract_pak(full_name, "", out_folder, save_dds)
+        for filename in os.listdir(os.path.join(data_dir, 'LOC', list(os.listdir(os.path.join(data_dir, 'LOC')))[0])):
+            if filename.lower().endswith(".pak") and "x" + scale in filename:
+                lang = list(os.listdir(os.path.join(data_dir, 'LOC')))[0]
+                full_name = os.path.join(data_dir, 'LOC', lang, filename)
+                __extract_pak(full_name, lang, out_folder, save_dds)
 
 def __extract_pak(file, lang, out_folder, save_dds):
     with open(file, 'rb') as f:
