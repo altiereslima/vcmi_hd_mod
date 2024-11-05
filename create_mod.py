@@ -25,10 +25,15 @@
 import os
 import json
 import zipfile
+import pandas as pd
 
 def create_mod(in_folder, out_folder):
     out_folder = os.path.join(out_folder, "hd_version")
     os.makedirs(out_folder, exist_ok=True)
+
+    df = pd.read_csv("sd_lod_sprites.csv", sep=";", header=0)
+    df['defname'] = df['defname'].str.upper()
+    df['imagename'] = df['imagename'].str.upper()
 
     for scale in ["2", "3"]:
         lang = os.listdir(os.path.join(in_folder, "bitmap_DXT_loc_x" + scale + ".pak"))[0]
@@ -57,7 +62,7 @@ def create_mod(in_folder, out_folder):
                 for folder in os.listdir(path):
                     for file in os.listdir(os.path.join(path, folder)):
                         archive.writestr("sprites/" + folder + "$" + scale + "/" + file, open(os.path.join(path, folder, file), "rb").read())
-                    archive.writestr("sprites/" + folder + "$" + scale + ".json", create_animation_config(folder + "$" + scale, os.listdir(os.path.join(path, folder))))
+                    archive.writestr("sprites/" + folder + "$" + scale + ".json", create_animation_config(folder + "$" + scale, os.listdir(os.path.join(path, folder)), df))
 
 
 def create_mod_config():
@@ -106,11 +111,19 @@ def create_lang_mod_config(scale, language):
     }
     return json.dumps(conf, indent=4, ensure_ascii=False)
 
-def create_animation_config(name, files):
+def create_animation_config(name, files, df):
     files = sorted(files)
 
     conf = {
         "basepath": name + "/",
-        "images": [{"frame": i, "file": x} for i, x in enumerate(files)]
+        "images": [
+            {
+                "group": int(df[df["imagename"] == os.path.splitext(x)[0].upper()]["group"].iloc[0]),
+                "frame": int(df[df["imagename"] == os.path.splitext(x)[0].upper()]["frame"].iloc[0]),
+                "file": x
+            }
+            for i, x in enumerate(files)
+            if len(df[df["imagename"] == os.path.splitext(x)[0].upper()]) > 0
+        ]
     }
     return json.dumps(conf, indent=4, ensure_ascii=False)
