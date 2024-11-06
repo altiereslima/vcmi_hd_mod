@@ -31,7 +31,7 @@ def main():
     output_path = "/tmp/test/out"
 
     extract_assets(input_path, temp_path)
-    create_mod(temp_path, output_path)
+    create_mod(temp_path, output_path, ["2", "3"])
 
 if __name__ == '__main__':
     main()

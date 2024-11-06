@@ -29,13 +29,13 @@ import zipfile
 import pandas as pd
 from PIL import Image
 
-def create_mod(in_folder, out_folder):
+def create_mod(in_folder, out_folder, scales):
     out_folder = os.path.join(out_folder, "hd_version")
     os.makedirs(out_folder, exist_ok=True)
 
     df = pd.read_csv("sd_lod_sprites.csv", sep=";", header=0)
 
-    for scale in ["2", "3"]:
+    for scale in scales:
         lang = os.listdir(os.path.join(in_folder, "bitmap_DXT_loc_x" + scale + ".pak"))[0]
 
         out_folder_main = os.path.join(out_folder, "mods", "x" + scale)
