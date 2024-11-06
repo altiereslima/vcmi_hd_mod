@@ -34,8 +34,6 @@ def create_mod(in_folder, out_folder):
     os.makedirs(out_folder, exist_ok=True)
 
     df = pd.read_csv("sd_lod_sprites.csv", sep=";", header=0)
-    df['defname'] = df['defname'].str.upper()
-    df['imagename'] = df['imagename'].str.upper()
 
     for scale in ["2", "3"]:
         lang = os.listdir(os.path.join(in_folder, "bitmap_DXT_loc_x" + scale + ".pak"))[0]
@@ -61,8 +59,13 @@ def create_mod(in_folder, out_folder):
         for name, destination in { "sprite_DXT_com_x" + scale + ".pak": out_folder_main, "sprite_DXT_loc_x" + scale + ".pak": out_folder_translation }.items():
             with zipfile.ZipFile(os.path.join(destination, "content.zip"), mode="a") as archive:
                 path = os.path.join(in_folder, name, lang if "loc" in name else "")
-                for folder in os.listdir(path):
-                    handle_sprites(archive, path, folder, scale, df)
+
+                grouped_df = df.groupby('defname')
+                for name, group in grouped_df:
+                    folders = [x.upper() for x in os.listdir(path)]
+                    if name.upper() in folders:
+                        folder = os.listdir(path)[folders.index(name.upper())]
+                        handle_sprites(archive, path, folder, scale, group)
 
 def handle_sprites(archive, path, folder, scale, df):
     data = {x:open(os.path.join(path, folder, x), "rb").read() for x in os.listdir(os.path.join(path, folder))}
@@ -143,12 +146,12 @@ def create_animation_config(name, files, df):
         "basepath": name + "/",
         "images": [
             {
-                "group": int(df[df["imagename"] == os.path.splitext(x)[0].upper()]["group"].iloc[0]),
-                "frame": int(df[df["imagename"] == os.path.splitext(x)[0].upper()]["frame"].iloc[0]),
-                "file": x
+                "group": row["group"],
+                "frame": row["frame"],
+                "file": row["imagename"] + ".png"
             }
-            for i, x in enumerate(files)
-            if len(df[df["imagename"] == os.path.splitext(x)[0].upper()]) > 0
+            for i, row in df.iterrows()
+            if row["imagename"].upper() in [os.path.splitext(x)[0].upper() for x in files]
         ]
     }
     return json.dumps(conf, indent=4, ensure_ascii=False)
