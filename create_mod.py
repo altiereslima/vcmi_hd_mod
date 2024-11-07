@@ -73,7 +73,7 @@ def handle_sprites(archive, path, folder, scale, df):
 
     # water + rivers special handling - paletteAnimation - TODO: Support multiple frames instead of paletteAnimation in VCMI
     if folder.upper() in ["WATRTL", "LAVATL"] + ["CLRRVR", "MUDRVR", "LAVRVR"]:
-        data = {str.replace(x, "_0", ""):y for x, y in data.items() if str.endswith(x, "_0.png")}
+        data = {str.replace(x, "_0", ""):y for x, y in data.items() if str.endswith(x, "_0.png") or "_" not in str(x)}
 
     # resize def
     max_size_x = df["full_width"].max() * s
