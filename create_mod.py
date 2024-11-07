@@ -69,25 +69,25 @@ def create_mod(in_folder, out_folder, scales):
 
 def handle_sprites(archive, path, folder, scale, df):
     data = {x:open(os.path.join(path, folder, x), "rb").read() for x in os.listdir(os.path.join(path, folder))}
+    s = int(scale)
 
-    # water + rivers special handling - paletteAnimation
+    # water + rivers special handling - paletteAnimation - TODO: Support multiple frames instead of paletteAnimation in VCMI
     if folder.upper() in ["WATRTL", "LAVATL"] + ["CLRRVR", "MUDRVR", "LAVRVR"]:
         data = {str.replace(x, "_0", ""):y for x, y in data.items() if str.endswith(x, "_0.png")}
 
-    ## resize def - TODO: for town structures (offsets needed)
-    #max_size_x = 0
-    #max_size_y = 0
-    #for name, item in data.items():
-    #    img = Image.open(io.BytesIO(item))
-    #    max_size_x = max(max_size_x, img.width)
-    #    max_size_y = max(max_size_y, img.height)
-    #for item in data.keys():
-    #    img = Image.open(io.BytesIO(data[item]))
-    #    tmpimg = Image.new(img.mode, (max_size_x, max_size_y), (255, 255, 255, 0))
-    #    tmpimg.paste(img, (0, 0))
-    #    img_byte_arr = io.BytesIO()
-    #    tmpimg.save(img_byte_arr, format='PNG')
-    #    data[item] = img_byte_arr.getvalue()
+    # resize def
+    max_size_x = df["full_width"].max() * s
+    max_size_y = df["full_height"].max() * s
+    for item in data.keys():
+        df_tmp = df[df["imagename"].str.upper() == os.path.splitext(item)[0].upper()]
+        if len(df_tmp) > 0:
+            df_row = df_tmp.iloc[0]
+            img = Image.open(io.BytesIO(data[item]))
+            tmpimg = Image.new(img.mode, (max_size_x, max_size_y), (255, 255, 255, 0))
+            tmpimg.paste(img, (df_row["left_margin"] * s, df_row["top_margin"] * s))
+            img_byte_arr = io.BytesIO()
+            tmpimg.save(img_byte_arr, format='PNG')
+            data[item] = img_byte_arr.getvalue()
 
     for file, content in data.items():
         archive.writestr("sprites/" + folder + "$" + scale + "/" + file, content)
