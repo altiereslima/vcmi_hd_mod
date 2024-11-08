@@ -54,7 +54,7 @@ def create_mod(in_folder, out_folder, scales):
             with zipfile.ZipFile(os.path.join(destination, "content.zip"), mode="w") as archive:
                 path = os.path.join(in_folder, name, lang if "loc" in name else "")
                 for file in os.listdir(path):
-                    archive.writestr("data/" + os.path.splitext(file)[0] + "$" + scale + ".png", open(os.path.join(path, file), "rb").read())
+                    handle_bitmaps(archive, path, file, scale)
 
         for name, destination in { "sprite_DXT_com_x" + scale + ".pak": out_folder_main, "sprite_DXT_loc_x" + scale + ".pak": out_folder_translation }.items():
             with zipfile.ZipFile(os.path.join(destination, "content.zip"), mode="a") as archive:
@@ -67,13 +67,25 @@ def create_mod(in_folder, out_folder, scales):
                         folder = os.listdir(path)[folders.index(name.upper())]
                         handle_sprites(archive, path, folder, scale, group)
 
+def handle_bitmaps(archive, path, file, scale):
+    name = os.path.splitext(file)[0]
+
+    if name.upper() in [ "MAINMENU", "GAMSELBK", "GSELPOP1", "SCSELBCK", "LOADGAME", "NEWGAME", "LOADBAR" ]:
+        return
+
+    archive.writestr("data/" + os.path.splitext(file)[0] + "$" + scale + ".png", open(os.path.join(path, file), "rb").read())
+
 def handle_sprites(archive, path, folder, scale, df):
     data = {x:open(os.path.join(path, folder, x), "rb").read() for x in os.listdir(os.path.join(path, folder))}
     s = int(scale)
 
-    # water + rivers special handling - paletteAnimation - TODO: Support multiple frames instead of paletteAnimation in VCMI
+    # skip menu buttons
+    if folder.upper() in ["MMENUNG", "MMENULG", "MMENUHS", "MMENUCR", "MMENUQT", "GTSINGL", "GTMULTI", "GTCAMPN", "GTTUTOR", "GTBACK", "GTSINGL", "GTMULTI", "GTCAMPN", "GTTUTOR", "GTBACK"]:
+        return
+
+    # skip water + rivers special handling - paletteAnimation
     if folder.upper() in ["WATRTL", "LAVATL"] + ["CLRRVR", "MUDRVR", "LAVRVR"]:
-        data = {str.replace(x, "_0", ""):y for x, y in data.items() if str.endswith(x, "_0.png") or "_" not in str(x)}
+        return
 
     # resize def
     max_size_x = df["full_width"].max() * s
