@@ -153,5 +153,6 @@ def __extract_images(file, name, image_config, data, lang, out_folder, save_dds)
                 if img_shadow_crop is not None:
                     img_shadow_crop.save(os.path.join(out_folder, file, lang, img_name + ".shadow.png"))
     if save_dds:
-        img[0].save(os.path.join(out_folder, file, lang, name + ".dds.png"))
-        open(os.path.join(out_folder, file, lang, name + ".dds"), 'wb').write(data[0])
+        for i in range(len(img)):
+            img[i].save(os.path.join(out_folder, file, lang, name + "." + str(i) + ".dds.png"))
+            open(os.path.join(out_folder, file, lang, name + "." + str(i) + ".dds"), 'wb').write(data[i])
