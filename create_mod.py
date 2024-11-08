@@ -33,7 +33,7 @@ def create_mod(in_folder, out_folder, scales):
     out_folder = os.path.join(out_folder, "hd_version")
     os.makedirs(out_folder, exist_ok=True)
 
-    df = pd.read_csv("sd_lod_sprites.csv", sep=";", header=0)
+    df = pd.read_csv("sd_lod_sprites.csv", sep=";", header=0) # export from H3 Complete
 
     for scale in scales:
         lang = os.listdir(os.path.join(in_folder, "bitmap_DXT_loc_x" + scale + ".pak"))[0]
@@ -70,6 +70,7 @@ def create_mod(in_folder, out_folder, scales):
 def handle_bitmaps(archive, path, file, scale):
     name = os.path.splitext(file)[0]
 
+    # Skip RoE specific files
     if name.upper() in [ "MAINMENU", "GAMSELBK", "GSELPOP1", "SCSELBCK", "LOADGAME", "NEWGAME", "LOADBAR" ]:
         return
 
@@ -79,7 +80,7 @@ def handle_sprites(archive, path, folder, scale, df):
     data = {x:open(os.path.join(path, folder, x), "rb").read() for x in os.listdir(os.path.join(path, folder))}
     s = int(scale)
 
-    # skip menu buttons
+    # skip menu buttons (RoE)
     if folder.upper() in ["MMENUNG", "MMENULG", "MMENUHS", "MMENUCR", "MMENUQT", "GTSINGL", "GTMULTI", "GTCAMPN", "GTTUTOR", "GTBACK", "GTSINGL", "GTMULTI", "GTCAMPN", "GTTUTOR", "GTBACK"]:
         return
 

@@ -28,9 +28,12 @@ import zlib
 import shutil
 from PIL import Image
 
-def extract_assets(in_folder, out_folder, save_dds=False):
+def extract_assets(in_folder, out_folder, save_dds=True):
     data_dir = os.path.join(in_folder, "data")
     shutil.copytree(data_dir, os.path.join(out_folder, "data"), dirs_exist_ok=True)
+
+    if os.path.isfile(os.path.join(out_folder, "info.csv")):
+        os.remove(os.path.join(out_folder, "info.csv"))
 
     for scale in ["2", "3"]:
         for filename in os.listdir(data_dir):
@@ -107,22 +110,48 @@ def __extract_images(file, name, image_config, data, lang, out_folder, save_dds)
         if len(tmp) > 11:
             img_name = tmp[0]
             img_nr = int(tmp[1])
+            img_val1 = int(tmp[2])
+            img_val2 = int(tmp[3])
+            img_val3 = int(tmp[4])
+            img_val4 = int(tmp[5])
             img_x = int(tmp[6])
             img_y = int(tmp[7])
             img_width = int(tmp[8])
             img_height = int(tmp[9])
             img_rotation = int(tmp[10])
+            img_has_shadow = int(tmp[11])
 
             img_crop = img[img_nr]
             img_crop = img_crop.crop((img_x, img_y, img_x+img_width, img_y+img_height))
             img_crop = img_crop.rotate(-90 * img_rotation, expand=True)
 
+            img_shadow_crop = None
+            if img_has_shadow == 1:
+                img_shadow_nr = int(tmp[12])
+                img_shadow_x = int(tmp[13])
+                img_shadow_y = int(tmp[14])
+                img_shadow_width = int(tmp[15])
+                img_shadow_height = int(tmp[16])
+                img_shadow_rotation = int(tmp[17])
+
+                img_shadow_crop = img[img_shadow_nr]
+                img_shadow_crop = img_shadow_crop.crop((img_shadow_x, img_shadow_y, img_shadow_x+img_shadow_width, img_shadow_y+img_shadow_height))
+                img_shadow_crop = img_shadow_crop.rotate(-90 * img_shadow_rotation, expand=True)
+
+            with open(os.path.join(out_folder, "info.csv"), "a") as f:
+                f.write("%s;%s;%s\r\n"%(file, name, line.replace(' ', ';')))
+
             if 'sprite' in file.lower():
                 if not os.path.exists(os.path.join(out_folder, file, lang, name)): os.makedirs(os.path.join(out_folder, file, lang, name), exist_ok=True)
                 img_crop.save(os.path.join(out_folder, file, lang, name, img_name + ".png"))
+                
+                if img_shadow_crop is not None:
+                    img_shadow_crop.save(os.path.join(out_folder, file, lang, name, img_name + ".shadow.png"))
             else:
                 if not os.path.exists(os.path.join(out_folder, file, lang)): os.makedirs(os.path.join(out_folder, file, lang), exist_ok=True)
                 img_crop.save(os.path.join(out_folder, file, lang, img_name + ".png"))
+                if img_shadow_crop is not None:
+                    img_shadow_crop.save(os.path.join(out_folder, file, lang, img_name + ".shadow.png"))
     if save_dds:
         img[0].save(os.path.join(out_folder, file, lang, name + ".dds.png"))
         open(os.path.join(out_folder, file, lang, name + ".dds"), 'wb').write(data[0])
