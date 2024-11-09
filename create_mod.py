@@ -75,7 +75,7 @@ def handle_bitmaps(archive, path, file, scale):
     if name.upper() in [ "MAINMENU", "GAMSELBK", "GSELPOP1", "SCSELBCK", "LOADGAME", "NEWGAME", "LOADBAR" ]:
         return
 
-    archive.writestr("data/" + os.path.splitext(file)[0] + "$" + scale + ".png", open(os.path.join(path, file), "rb").read())
+    archive.writestr("data" + scale + "x/" + os.path.splitext(file)[0] + ".png", open(os.path.join(path, file), "rb").read())
 
 def handle_sprites(archive, path, folder, scale, df, df_pak):
     data = {x:open(os.path.join(path, folder, x), "rb").read() for x in os.listdir(os.path.join(path, folder))}
@@ -107,8 +107,8 @@ def handle_sprites(archive, path, folder, scale, df, df_pak):
             data[item] = img_byte_arr.getvalue()
 
     for file, content in data.items():
-        archive.writestr("sprites/" + folder + "$" + scale + "/" + file, content)
-    archive.writestr("sprites/" + folder + "$" + scale + ".json", create_animation_config(folder + "$" + scale, data.keys(), df))
+        archive.writestr("sprites" + scale + "x/" + folder + "/" + file, content)
+    archive.writestr("sprites" + scale + "x/" + folder + ".json", create_animation_config(folder, data.keys(), df))
 
 def create_mod_config():
     conf = {
