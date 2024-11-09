@@ -28,7 +28,7 @@ import zlib
 import shutil
 from PIL import Image
 
-def extract_assets(in_folder, out_folder, save_dds=True):
+def extract_assets(in_folder, out_folder, save_dds=False):
     data_dir = os.path.join(in_folder, "data")
     shutil.copytree(data_dir, os.path.join(out_folder, "data"), dirs_exist_ok=True)
 
@@ -110,9 +110,9 @@ def __extract_images(file, name, image_config, data, lang, out_folder, save_dds)
         if len(tmp) > 11:
             img_name = tmp[0]
             img_nr = int(tmp[1])
-            img_val1 = int(tmp[2])
+            img_val1 = int(tmp[2]) # x offset between hd and sd sprites
             img_val2 = int(tmp[3])
-            img_val3 = int(tmp[4])
+            img_val3 = int(tmp[4]) # y offset between hd and sd sprites
             img_val4 = int(tmp[5])
             img_x = int(tmp[6])
             img_y = int(tmp[7])

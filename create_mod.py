@@ -34,6 +34,7 @@ def create_mod(in_folder, out_folder, scales):
     os.makedirs(out_folder, exist_ok=True)
 
     df = pd.read_csv("sd_lod_sprites.csv", sep=";", header=0) # export from H3 Complete
+    df_pak = pd.read_csv(os.path.join(in_folder, "info.csv"), sep=";", header=None, names=range(20))
 
     for scale in scales:
         lang = os.listdir(os.path.join(in_folder, "bitmap_DXT_loc_x" + scale + ".pak"))[0]
@@ -65,7 +66,7 @@ def create_mod(in_folder, out_folder, scales):
                     folders = [x.upper() for x in os.listdir(path)]
                     if name.upper() in folders:
                         folder = os.listdir(path)[folders.index(name.upper())]
-                        handle_sprites(archive, path, folder, scale, group)
+                        handle_sprites(archive, path, folder, scale, group, df_pak[df_pak[1].str.upper() == folder.upper()])
 
 def handle_bitmaps(archive, path, file, scale):
     name = os.path.splitext(file)[0]
@@ -76,7 +77,7 @@ def handle_bitmaps(archive, path, file, scale):
 
     archive.writestr("data/" + os.path.splitext(file)[0] + "$" + scale + ".png", open(os.path.join(path, file), "rb").read())
 
-def handle_sprites(archive, path, folder, scale, df):
+def handle_sprites(archive, path, folder, scale, df, df_pak):
     data = {x:open(os.path.join(path, folder, x), "rb").read() for x in os.listdir(os.path.join(path, folder))}
     s = int(scale)
 
@@ -93,11 +94,14 @@ def handle_sprites(archive, path, folder, scale, df):
     max_size_y = df["full_height"].max() * s
     for item in data.keys():
         df_tmp = df[df["imagename"].str.upper() == os.path.splitext(item)[0].upper()]
+        df_pak_tmp = df_pak[df_pak[2].str.upper() == os.path.splitext(item)[0].upper()]
         if len(df_tmp) > 0:
             df_row = df_tmp.iloc[0]
+            offset_sdhd_x = df_pak_tmp.iloc[0][4]
+            offset_sdhd_y = df_pak_tmp.iloc[0][6]
             img = Image.open(io.BytesIO(data[item]))
             tmpimg = Image.new(img.mode, (max_size_x, max_size_y), (255, 255, 255, 0))
-            tmpimg.paste(img, (df_row["left_margin"] * s, df_row["top_margin"] * s))
+            tmpimg.paste(img, ((df_row["left_margin"] - offset_sdhd_x) * s, (df_row["top_margin"] - offset_sdhd_y) * s))
             img_byte_arr = io.BytesIO()
             tmpimg.save(img_byte_arr, format='PNG')
             data[item] = img_byte_arr.getvalue()
