@@ -27,7 +27,7 @@ import io
 import json
 import zipfile
 import pandas as pd
-from PIL import Image, ImageEnhance
+from PIL import Image, ImageFilter, ImageEnhance
 
 def create_mod(in_folder, out_folder, scales):
     out_folder = os.path.join(out_folder, "hd_version")
@@ -97,6 +97,10 @@ def handle_sprites(archive, path, folder, scale, df, df_pak, df_flag, flag_img):
     # skip menu buttons (RoE)
     if folder.upper() in ["MMENUNG", "MMENULG", "MMENUHS", "MMENUCR", "MMENUQT", "GTSINGL", "GTMULTI", "GTCAMPN", "GTTUTOR", "GTBACK", "GTSINGL", "GTMULTI", "GTCAMPN", "GTTUTOR", "GTBACK"]:
         return
+    
+    # skip dialogbox - coloring not supported yet by vcmi
+    if folder.upper() in ["dialgbox"]:
+        return
 
     # skip water + rivers special handling - paletteAnimation - not supported yet by vcmi
     if folder.upper() in ["WATRTL", "LAVATL"] + ["CLRRVR", "MUDRVR", "LAVRVR"]:
@@ -134,6 +138,22 @@ def handle_sprites(archive, path, folder, scale, df, df_pak, df_flag, flag_img):
                 img_byte_arr = io.BytesIO()
                 img.save(img_byte_arr, format='PNG')
                 data[name + "-overlay.png"] = img_byte_arr.getvalue()
+
+    # create outlines for creatures as overlay
+    for item in list(data.keys()):
+        name = os.path.splitext(item)[0]
+        creature_images = [x.upper() for x in ["CABEHE", "CADEVL", "CAELEM", "CALIZA", "CAMAGE", "cangel", "CAPEGS", "CBASIL", "CBDRGN", "CBDWAR", "cbehol", "Cbgog", "CBKNIG", "CBLORD", "CBTREE", "CBWLFR", "CCAVLR", "CCENTR", "CCERBU", "Ccgorg", "CCHAMP", "cchydr", "CCMCOR", "Ccrusd", "CcyclLor", "CCYCLR", "CDDRAG", "CDEVIL", "CDGOLE", "CDRFIR", "CDRFLY", "CDWARF", "CECENT", "CEELEM", "cefree", "cefres", "CELF", "Ceveye", "CFAMIL", "CFELEM", "CGARGO", "CGBASI", "CGDRAG", "CGENIE", "CGGOLE", "CGNOLL", "CGNOLM", "CGOBLI", "CGOG", "CGRELF", "CGREMA", "CGREMM", "CGRIFF", "CGTITA", "chalbd", "CHARPH", "CHARPY", "CHCBOW", "CHDRGN", "CHGOBL", "CHHOUN", "CHYDRA", "CIGOLE", "CIMP", "Citrog", "CLCBOW", "CLICH", "CLTITA", "CMAGE", "CMAGOG", "CMCORE", "Cmeduq", "Cmedus", "Cminok", "CMINOT", "Cmonkk", "CNAGA", "CNAGAG", "CNDRGN", "CNOSFE", "COGARG", "COGMAG", "COGRE", "COHDEM", "CORCCH", "CORC", "CPEGAS", "CPFIEN", "CPFOE", "CPKMAN", "CPLICH", "CPLIZA", "CRANGL", "CRDRGN", "Crgrif", "CROC", "CSGOLE", "CSKELE", "CSULTA", "Csword", "CTBIRD", "CTHDEM", "CTREE", "Ctrogl", "CUNICO", "CUWLFR", "CVAMP", "CWELEM", "CWIGHT", "CWRAIT", "CWSKEL", "CWUNIC", "CWYVER", "CWYVMN", "CYBEHE", "Czealt", "CZOMBI", "CZOMLO"]]
+        if name.upper().startswith(tuple(creature_images)) and "shadow".upper() not in name.upper():
+            img = Image.open(io.BytesIO(data[item]))
+            alpha = img.split()[-1]
+            alpha = ImageEnhance.Brightness(alpha).enhance(5)
+            img = Image.new("RGBA", img.size, (0,0,0,0))
+            img.paste(alpha, mask=alpha)
+            img = img.filter(ImageFilter.FIND_EDGES)
+            img = img.filter(ImageFilter.MaxFilter(3))
+            img_byte_arr = io.BytesIO()
+            img.save(img_byte_arr, format='PNG')
+            data[name + "-overlay.png"] = img_byte_arr.getvalue()
 
     for file, content in data.items():
         file = file.replace(".shadow", "-shadow")
