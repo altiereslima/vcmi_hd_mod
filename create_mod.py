@@ -40,32 +40,12 @@ def create_mod(in_folder, out_folder, scales):
     # flag images
     flag_path = os.path.join(in_folder, "data", "flags")
     flag_img_tmp = {
-        2: {
-            "grey": Image.open(os.path.join(flag_path, "flag_grey_x2.png")),
-            "red": Image.open(os.path.join(flag_path, "flag_red_x2.png")),
-            "blue": Image.open(os.path.join(flag_path, "flag_blue_x2.png")),
-            "tan": Image.open(os.path.join(flag_path, "flag_brown_x2.png")),
-            "green": Image.open(os.path.join(flag_path, "flag_green_x2.png")),
-            "orange": Image.open(os.path.join(flag_path, "flag_orange_x2.png")),
-            "purple": Image.open(os.path.join(flag_path, "flag_purple_x2.png")),
-            "teal": Image.open(os.path.join(flag_path, "flag_bluewin_x2.png")),
-            "pink": Image.open(os.path.join(flag_path, "flag_flesh_x2.png"))
-        },
-        3: {
-            "grey": Image.open(os.path.join(flag_path, "flag_grey.png")),
-            "red": Image.open(os.path.join(flag_path, "flag_red.png")),
-            "blue": Image.open(os.path.join(flag_path, "flag_blue.png")),
-            "tan": Image.open(os.path.join(flag_path, "flag_brown.png")),
-            "green": Image.open(os.path.join(flag_path, "flag_green.png")),
-            "orange": Image.open(os.path.join(flag_path, "flag_orange.png")),
-            "purple": Image.open(os.path.join(flag_path, "flag_purple.png")),
-            "teal": Image.open(os.path.join(flag_path, "flag_bluewin.png")),
-            "pink": Image.open(os.path.join(flag_path, "flag_flesh.png"))
-        }
+        2: Image.open(os.path.join(flag_path, "flag_grey_x2.png")),
+        3: Image.open(os.path.join(flag_path, "flag_grey.png"))
     }
     flag_img = [
         flag_img_tmp,
-        {x:{x2:y2.transpose(Image.FLIP_LEFT_RIGHT) for x2, y2 in y.items()} for x, y in flag_img_tmp.items()}
+        {x:y.transpose(Image.FLIP_LEFT_RIGHT) for x, y in flag_img_tmp.items()}
     ]
 
     for scale in scales:
@@ -117,7 +97,7 @@ def handle_sprites(archive, path, folder, scale, df, df_pak, df_flag, flag_img):
     if folder.upper() in ["MMENUNG", "MMENULG", "MMENUHS", "MMENUCR", "MMENUQT", "GTSINGL", "GTMULTI", "GTCAMPN", "GTTUTOR", "GTBACK", "GTSINGL", "GTMULTI", "GTCAMPN", "GTTUTOR", "GTBACK"]:
         return
 
-    # skip water + rivers special handling - paletteAnimation
+    # skip water + rivers special handling - paletteAnimation - not supported yet by vcmi
     if folder.upper() in ["WATRTL", "LAVATL"] + ["CLRRVR", "MUDRVR", "LAVRVR"]:
         return
 
@@ -138,22 +118,23 @@ def handle_sprites(archive, path, folder, scale, df, df_pak, df_flag, flag_img):
             tmpimg.save(img_byte_arr, format='PNG')
             data[item] = img_byte_arr.getvalue()
     
-    # add flag colored images
+    # add flag overlay images
     for item in list(data.keys()):
         name = os.path.splitext(item)[0]
         df_flag_tmp = df_flag[df_flag[0].str.upper() == name.upper()]
         if len(df_flag_tmp) > 0:
             df_flag_tmp = df_flag_tmp.iloc[0]
             img = Image.open(io.BytesIO(data[item]))
-            for color in flag_img[0][2].keys():
-                for i in range(df_flag_tmp[1]):
-                    flag = flag_img[int(df_flag_tmp[4+i*3])][s][color]
-                    img.paste(flag, (int(df_flag_tmp[2+i*3])*s, int(df_flag_tmp[3+i*3])*s), flag)
-                    img_byte_arr = io.BytesIO()
-                    img.save(img_byte_arr, format='PNG')
-                    data[name + "_" + color + ".png"] = img_byte_arr.getvalue()
+            img = Image.new(img.mode, (img.width, img.height), (255, 255, 255, 0))
+            for i in range(df_flag_tmp[1]):
+                flag = flag_img[int(df_flag_tmp[4+i*3])][s]
+                img.paste(flag, (int(df_flag_tmp[2+i*3])*s, int(df_flag_tmp[3+i*3])*s), flag)
+                img_byte_arr = io.BytesIO()
+                img.save(img_byte_arr, format='PNG')
+                data[name + "-overlay.png"] = img_byte_arr.getvalue()
 
     for file, content in data.items():
+        file = file.replace(".shadow", "-shadow")
         archive.writestr("sprites" + scale + "x/" + folder + "/" + file, content)
     archive.writestr("sprites" + scale + "x/" + folder + ".json", create_animation_config(folder, data.keys(), df))
 
