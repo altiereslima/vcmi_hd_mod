@@ -27,7 +27,7 @@ import io
 import json
 import zipfile
 import pandas as pd
-from PIL import Image
+from PIL import Image, ImageEnhance
 
 def create_mod(in_folder, out_folder, scales):
     out_folder = os.path.join(out_folder, "hd_version")
@@ -47,6 +47,7 @@ def create_mod(in_folder, out_folder, scales):
         flag_img_tmp,
         {x:y.transpose(Image.FLIP_LEFT_RIGHT) for x, y in flag_img_tmp.items()}
     ]
+    flag_img = [{x2:ImageEnhance.Brightness(y2).enhance(2.5) for x2, y2 in x.items()} for x in flag_img] #brighten flags
 
     for scale in scales:
         lang = os.listdir(os.path.join(in_folder, "bitmap_DXT_loc_x" + scale + ".pak"))[0]
@@ -64,13 +65,13 @@ def create_mod(in_folder, out_folder, scales):
             f.write(create_lang_mod_config(scale, lang))
 
         for name, destination in { "bitmap_DXT_com_x" + scale + ".pak": out_folder_main, "bitmap_DXT_loc_x" + scale + ".pak": out_folder_translation }.items():
-            with zipfile.ZipFile(os.path.join(destination, "content.zip"), mode="w") as archive:
+            with zipfile.ZipFile(os.path.join(destination, "content.zip"), mode="w", compression=zipfile.ZIP_STORED) as archive:
                 path = os.path.join(in_folder, name, lang if "loc" in name else "")
                 for file in os.listdir(path):
                     handle_bitmaps(archive, path, file, scale)
 
         for name, destination in { "sprite_DXT_com_x" + scale + ".pak": out_folder_main, "sprite_DXT_loc_x" + scale + ".pak": out_folder_translation }.items():
-            with zipfile.ZipFile(os.path.join(destination, "content.zip"), mode="a") as archive:
+            with zipfile.ZipFile(os.path.join(destination, "content.zip"), mode="a", compression=zipfile.ZIP_STORED) as archive:
                 path = os.path.join(in_folder, name, lang if "loc" in name else "")
 
                 grouped_df = df.groupby('defname')
@@ -105,8 +106,9 @@ def handle_sprites(archive, path, folder, scale, df, df_pak, df_flag, flag_img):
     max_size_x = df["full_width"].max() * s
     max_size_y = df["full_height"].max() * s
     for item in data.keys():
-        df_tmp = df[df["imagename"].str.upper() == os.path.splitext(item)[0].upper()]
-        df_pak_tmp = df_pak[df_pak[2].str.upper() == os.path.splitext(item)[0].upper()]
+        name = os.path.splitext(item.replace(".shadow", ""))[0].upper()
+        df_tmp = df[df["imagename"].str.upper() == name]
+        df_pak_tmp = df_pak[df_pak[2].str.upper() == name]
         if len(df_tmp) > 0:
             df_row = df_tmp.iloc[0]
             offset_sdhd_x = df_pak_tmp.iloc[0][4]
