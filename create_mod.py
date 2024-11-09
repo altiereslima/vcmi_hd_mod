@@ -35,6 +35,38 @@ def create_mod(in_folder, out_folder, scales):
 
     df = pd.read_csv("sd_lod_sprites.csv", sep=";", header=0) # export from H3 Complete
     df_pak = pd.read_csv(os.path.join(in_folder, "info.csv"), sep=";", header=None, names=range(20))
+    df_flag = pd.read_csv(os.path.join(in_folder, "data", "spriteFlagsInfo.txt"), sep=" ", names=range(20), header=None)
+
+    # flag images
+    flag_path = os.path.join(in_folder, "data", "flags")
+    flag_img_tmp = {
+        2: {
+            "grey": Image.open(os.path.join(flag_path, "flag_grey_x2.png")),
+            "red": Image.open(os.path.join(flag_path, "flag_red_x2.png")),
+            "blue": Image.open(os.path.join(flag_path, "flag_blue_x2.png")),
+            "tan": Image.open(os.path.join(flag_path, "flag_brown_x2.png")),
+            "green": Image.open(os.path.join(flag_path, "flag_green_x2.png")),
+            "orange": Image.open(os.path.join(flag_path, "flag_orange_x2.png")),
+            "purple": Image.open(os.path.join(flag_path, "flag_purple_x2.png")),
+            "teal": Image.open(os.path.join(flag_path, "flag_bluewin_x2.png")),
+            "pink": Image.open(os.path.join(flag_path, "flag_flesh_x2.png"))
+        },
+        3: {
+            "grey": Image.open(os.path.join(flag_path, "flag_grey.png")),
+            "red": Image.open(os.path.join(flag_path, "flag_red.png")),
+            "blue": Image.open(os.path.join(flag_path, "flag_blue.png")),
+            "tan": Image.open(os.path.join(flag_path, "flag_brown.png")),
+            "green": Image.open(os.path.join(flag_path, "flag_green.png")),
+            "orange": Image.open(os.path.join(flag_path, "flag_orange.png")),
+            "purple": Image.open(os.path.join(flag_path, "flag_purple.png")),
+            "teal": Image.open(os.path.join(flag_path, "flag_bluewin.png")),
+            "pink": Image.open(os.path.join(flag_path, "flag_flesh.png"))
+        }
+    }
+    flag_img = [
+        flag_img_tmp,
+        {x:{x2:y2.transpose(Image.FLIP_LEFT_RIGHT) for x2, y2 in y.items()} for x, y in flag_img_tmp.items()}
+    ]
 
     for scale in scales:
         lang = os.listdir(os.path.join(in_folder, "bitmap_DXT_loc_x" + scale + ".pak"))[0]
@@ -66,7 +98,7 @@ def create_mod(in_folder, out_folder, scales):
                     folders = [x.upper() for x in os.listdir(path)]
                     if name.upper() in folders:
                         folder = os.listdir(path)[folders.index(name.upper())]
-                        handle_sprites(archive, path, folder, scale, group, df_pak[df_pak[1].str.upper() == folder.upper()])
+                        handle_sprites(archive, path, folder, scale, group, df_pak[df_pak[1].str.upper() == folder.upper()], df_flag, flag_img)
 
 def handle_bitmaps(archive, path, file, scale):
     name = os.path.splitext(file)[0]
@@ -77,7 +109,7 @@ def handle_bitmaps(archive, path, file, scale):
 
     archive.writestr("data" + scale + "x/" + os.path.splitext(file)[0] + ".png", open(os.path.join(path, file), "rb").read())
 
-def handle_sprites(archive, path, folder, scale, df, df_pak):
+def handle_sprites(archive, path, folder, scale, df, df_pak, df_flag, flag_img):
     data = {x:open(os.path.join(path, folder, x), "rb").read() for x in os.listdir(os.path.join(path, folder))}
     s = int(scale)
 
@@ -105,6 +137,21 @@ def handle_sprites(archive, path, folder, scale, df, df_pak):
             img_byte_arr = io.BytesIO()
             tmpimg.save(img_byte_arr, format='PNG')
             data[item] = img_byte_arr.getvalue()
+    
+    # add flag colored images
+    for item in list(data.keys()):
+        name = os.path.splitext(item)[0]
+        df_flag_tmp = df_flag[df_flag[0].str.upper() == name.upper()]
+        if len(df_flag_tmp) > 0:
+            df_flag_tmp = df_flag_tmp.iloc[0]
+            img = Image.open(io.BytesIO(data[item]))
+            for color in flag_img[0][2].keys():
+                for i in range(df_flag_tmp[1]):
+                    flag = flag_img[int(df_flag_tmp[4+i*3])][s][color]
+                    img.paste(flag, (int(df_flag_tmp[2+i*3])*s, int(df_flag_tmp[3+i*3])*s), flag)
+                    img_byte_arr = io.BytesIO()
+                    img.save(img_byte_arr, format='PNG')
+                    data[name + "_" + color + ".png"] = img_byte_arr.getvalue()
 
     for file, content in data.items():
         archive.writestr("sprites" + scale + "x/" + folder + "/" + file, content)
